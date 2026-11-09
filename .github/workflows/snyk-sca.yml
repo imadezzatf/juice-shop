@@ -1,0 +1,34 @@
+name: DevSecOps — Snyk SCA
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  snyk-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Snyk SCA Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=package.json
+
+      - name: Snyk Monitor
+        run: npx snyk monitor --file=package.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
